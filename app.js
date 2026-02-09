@@ -20,9 +20,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('ESP32 Flasher Utility Initialized (with esptool-js)');
 
+    // ============= Tab Switching Logic =============
+    const switchTab = (targetId) => {
+        // Update tab buttons
+        document.querySelectorAll('.console-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.target === targetId);
+        });
+        // Update terminal windows
+        document.querySelectorAll('.terminal-window').forEach(win => {
+            win.classList.toggle('active', win.id === targetId);
+        });
+    };
+
+    // Add click handlers for tabs
+    document.querySelectorAll('.console-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.target));
+    });
+
     // ============= Helper: Log to Terminal =============
-    const log = (msg, type = 'info') => {
-        const terminal = document.querySelector('.terminal-window');
+    const log = (msg, type = 'info', targetId = 'serialConsole') => {
+        const terminal = document.getElementById(targetId);
+        if (!terminal) return;
+
         const line = document.createElement('div');
         line.className = 'log-line';
         line.textContent = `> ${msg}`;
@@ -36,7 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
         terminal.scrollTop = terminal.scrollHeight;
     };
 
-    // ============= Helper: Update Progress Bar =============
+    // Convenience wrappers
+    const logSerial = (msg, type = 'info') => log(msg, type, 'serialConsole');
+    const logFlash = (msg, type = 'info') => log(msg, type, 'flashConsole');
+
     // ============= Helper: Update Progress Bar =============
     const updateProgress = (show, percent = 0, status = '') => {
         const progressContainer = document.getElementById('progressContainer');
@@ -55,18 +77,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ============= Helper: Update Device Info =============
+    const updateDeviceInfo = async (loader) => {
+        const panel = document.getElementById('deviceInfoPanel');
+        if (!panel) return;
+
+        try {
+            const chipName = await loader.chip.getChipDescription(loader);
+            const macAddr = await loader.chip.readMac(loader);
+            const features = await loader.chip.getChipFeatures(loader);
+            const crystal = await loader.chip.getCrystalFreq(loader);
+
+            document.getElementById('infoChip').textContent = chipName;
+            document.getElementById('infoMac').textContent = macAddr;
+            document.getElementById('infoFeat').textContent = features.join(', ');
+            document.getElementById('infoCry').textContent = `${crystal} MHz`;
+
+            panel.style.display = 'block';
+        } catch (e) {
+            console.error("Failed to read device info", e);
+        }
+    };
+
     // ============= esptool-js Terminal Interface =============
     const espLoaderTerminal = {
         clean() {
             // Clear is optional
         },
         writeLine(data) {
-            log(data, 'info');
+            logFlash(data, 'info');
         },
         write(data) {
             // For incremental output - we batch it for cleaner display
             if (data.trim()) {
-                log(data.trim(), 'info');
+                logFlash(data.trim(), 'info');
             }
         }
     };
@@ -94,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Process all complete lines
                     for (let i = 0; i < lines.length - 1; i++) {
                         const line = lines[i].replace('\r', '');
-                        if (line) log(line, 'data');
+                        if (line) logSerial(line, 'data');
                     }
 
                     // Keep the last partial line in buffer
@@ -275,16 +319,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============= Erase Button Handler =============
     document.getElementById('eraseBtn')?.addEventListener('click', async () => {
         if (!port) {
-            log('Connect to a device first!', 'warning');
+            logSerial('Connect to a device first!', 'warning');
             return;
         }
 
+        // Switch to flash console tab
+        switchTab('flashConsole');
+
         try {
             // Stop read loop and close port to let esptool take over
-            log('Stopping serial monitor for exclusive access...', 'info');
+            logFlash('Stopping serial monitor for exclusive access...', 'info');
             await stopReadingAndClose();
 
-            log('Starting chip erase...', 'info');
+            logFlash('Starting chip erase...', 'info');
             updateProgress(true, 0, 'Connecting to ESP32...');
 
             // Re-acquire transport (esptool will open the port)
@@ -297,20 +344,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Connect to the chip
             await esploader.main();
-            log(`Connected to ${esploader.chip.CHIP_NAME}`, 'success');
+            logFlash(`Connected to ${esploader.chip.CHIP_NAME}`, 'success');
+
+            // Populae Device Info Panel
+            await updateDeviceInfo(esploader);
 
             updateProgress(true, 50, 'Erasing flash...');
             await esploader.eraseFlash();
 
-
             updateProgress(true, 100, 'Erase complete!');
-            log('Chip erased successfully!', 'success');
+            logFlash('Chip erased successfully!', 'success');
 
             await new Promise(resolve => setTimeout(resolve, 1000));
             updateProgress(false);
 
             // Reset and Restart Monitor
-            log('Resetting device...', 'info');
+            logFlash('Resetting device...', 'info');
             await transport.setDTR(false);
             await new Promise(r => setTimeout(r, 100));
             await transport.setRTS(true);
@@ -319,13 +368,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try { await transport.disconnect(); } catch (e) { }
 
+
             // Re-open for monitor
             await port.open({ baudRate: 115200 });
             startReading();
-            log('Serial monitor active.', 'success');
+            logFlash('Erase complete! Switching to Serial Monitor...', 'success');
+
+            // Switch back to serial console
+            switchTab('serialConsole');
+            logSerial('Serial monitor active.', 'success');
 
         } catch (error) {
-            log(`Erase error: ${error.message}`, 'error');
+            logFlash(`Erase error: ${error.message}`, 'error');
             console.error(error);
             updateProgress(false);
 
@@ -333,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await port.open({ baudRate: 115200 });
                 startReading();
+                switchTab('serialConsole');
             } catch (e) { }
         }
     });
@@ -340,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============= Program Button Handler =============
     document.getElementById('programBtn')?.addEventListener('click', async () => {
         if (!port) {
-            log('Connect to a device first!', 'warning');
+            logSerial('Connect to a device first!', 'warning');
             return;
         }
 
@@ -356,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const addressInput = singleFileContainer ? singleFileContainer.querySelector('.address-input') : document.querySelector('.address-input');
 
                 if (!fileInput.files || fileInput.files.length === 0) {
-                    log('Please select a firmware file first!', 'warning');
+                    logSerial('Please select a firmware file first!', 'warning');
                     return;
                 }
 
@@ -393,16 +448,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (filesToFlash.length === 0) {
-                    log('Please select at least one file to flash!', 'warning');
+                    logSerial('Please select at least one file to flash!', 'warning');
                     return;
                 }
             }
 
+            // Switch to flash console tab
+            switchTab('flashConsole');
+
             // Stop monitor for flashing
-            log('Stopping serial monitor for flashing...', 'info');
+            logFlash('Stopping serial monitor for flashing...', 'info');
             await stopReadingAndClose();
 
-            log(`Preparing to flash ${filesToFlash.length} file(s)...`, 'info');
+            logFlash(`Preparing to flash ${filesToFlash.length} file(s)...`, 'info');
             updateProgress(true, 0, 'Connecting to ESP32...');
 
             transport = new Transport(port, true);
@@ -413,31 +471,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 enableTracing: false
             });
 
-            log('Connecting to ESP32 bootloader...', 'info');
+            logFlash('Connecting to ESP32 bootloader...', 'info');
             const chip = await esploader.main();
-            log(`Chip detected: ${chip}`, 'success');
+            logFlash(`Chip detected: ${chip}`, 'success');
+
+            // Populae Device Info Panel
+            await updateDeviceInfo(esploader);
 
             // Check if stub is already running before trying to load it
             if (esploader.IS_STUB) {
-                log('Stub loader already running (from previous session)', 'success');
+                logFlash('Stub loader already running (from previous session)', 'success');
             } else {
                 // Add delay to ensure chip is fully ready
                 await new Promise(resolve => setTimeout(resolve, 200));
 
                 try {
-                    log('Uploading stub loader for fast flashing...', 'info');
+                    logFlash('Uploading stub loader for fast flashing...', 'info');
                     await esploader.runStub();
-                    log('Stub loader running!', 'success');
+                    logFlash('Stub loader running!', 'success');
                 } catch (e) {
-                    log(`Stub loader failed: ${e.message}`, 'warning');
-                    log('Using ROM bootloader (slower)', 'warning');
+                    logFlash(`Stub loader failed: ${e.message}`, 'warning');
+                    logFlash('Using ROM bootloader (slower)', 'warning');
                 }
             }
 
             // Flash each file
             for (let i = 0; i < filesToFlash.length; i++) {
                 const fileInfo = filesToFlash[i];
-                log(`Flashing ${fileInfo.name} to 0x${fileInfo.address.toString(16).padStart(8, '0')}...`, 'info');
+                logFlash(`Flashing ${fileInfo.name} to 0x${fileInfo.address.toString(16).padStart(8, '0')}...`, 'info');
 
                 // Convert ArrayBuffer to binary string (required for some esptool-js versions)
                 const u8 = new Uint8Array(fileInfo.data);
@@ -465,17 +526,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         updateProgress(true, percent, `Flashing ${fileInfo.name}: ${percent}%`);
                     }
                 });
-                log(`${fileInfo.name} flashed successfully!`, 'success');
+                logFlash(`${fileInfo.name} flashed successfully!`, 'success');
             }
 
             updateProgress(true, 100, 'Flash complete!');
-            log('All files flashed successfully!', 'success');
+            logFlash('All files flashed successfully!', 'success');
 
             await new Promise(resolve => setTimeout(resolve, 1000));
             updateProgress(false);
 
             // Reset via transport (esptool-js API)
-            log('Resetting device...', 'info');
+            logFlash('Resetting device...', 'info');
             await transport.setDTR(false);
             await new Promise(r => setTimeout(r, 100));
             await transport.setRTS(true);
@@ -487,10 +548,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Restart monitor
             await port.open({ baudRate: 115200 });
             startReading();
-            log('Serial monitor active. Watching for boot logs...', 'success');
+            logFlash('Flash complete! Switching to Serial Monitor...', 'success');
+
+            // Switch back to serial console
+            switchTab('serialConsole');
+            logSerial('Serial monitor active. Watching for boot logs...', 'success');
 
         } catch (error) {
-            log(`Flash error: ${error.message}`, 'error');
+            logFlash(`Flash error: ${error.message}`, 'error');
             console.error(error);
             updateProgress(false);
 
@@ -498,6 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await port.open({ baudRate: 115200 });
                 startReading();
+                switchTab('serialConsole');
             } catch (e) { }
         }
     });

@@ -232,4 +232,75 @@ header {
     color: #ccc;
     overflow: auto;
     white-space: pre;
+    display: none;
+    /* Hidden by default, controlled by JS */
+}
+
+.terminal-window.active {
+    display: block;
+}
+
+/* Console Tabs */
+.console-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.console-tab {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    transition: all 0.2s ease;
+}
+
+.console-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.console-tab.active {
+    background: var(--glass-bg);
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+}
+
+/* Device Info Panel */
+.device-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    font-size: 0.9rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-label {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.info-value {
+    color: var(--text-main);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-value.highlight {
+    color: var(--primary);
 }

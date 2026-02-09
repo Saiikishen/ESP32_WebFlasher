@@ -45,10 +45,39 @@
         </section>
 
         <!-- Main Workspace (Hidden until connected or for demo) -->
-        <div id="workspace" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div id="workspace" style="display: flex; flex-direction: column; gap: 24px;">
             <!-- Files Column -->
             <section class="files-panel glass-panel" style="padding: 24px;">
                 <h3 style="margin-bottom: 20px;">Firmware Files</h3>
+
+                <!-- Device Info Panel (Hidden by default) -->
+                <div id="deviceInfoPanel" class="glass-panel"
+                    style="display: none; padding: 16px; margin-bottom: 24px; border: 1px solid rgba(0, 242, 255, 0.1);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="font-size: 0.9rem; color: var(--text-main);">Device Connected</h4>
+                        <span class="status-pill connected" style="padding: 4px 12px; font-size: 0.75rem;">Active</span>
+                    </div>
+
+                    <div class="device-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Chip Model</span>
+                            <span id="infoChip" class="info-value highlight">Unknown</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">MAC Address</span>
+                            <span id="infoMac" class="info-value">00:00:00:00:00:00</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Features</span>
+                            <span id="infoFeat" class="info-value">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Crystal</span>
+                            <span id="infoCry" class="info-value">-</span>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="file-drop-zone"
                     style="border: 2px dashed var(--glass-border); border-radius: var(--radius-md); padding: 30px; text-align: center; color: var(--text-muted); transition: all 0.2s;">
@@ -142,11 +171,25 @@
             </section>
 
             <!-- Console Column -->
-            <section class="console-panel glass-panel" style="padding: 24px; display: flex; flex-direction: column;">
-                <h3 style="margin-bottom: 20px;">Serial Monitor</h3>
-                <div class="terminal-window">
-                    <div class="log-line">Welcome to ESP32 Web Flasher v1.0</div>
-                    <div class="log-line">> Ready for connection...</div>
+            <section class="console-panel glass-panel"
+                style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
+                <!-- Tabs -->
+                <div class="console-tabs" style="padding: 12px 12px 0 12px; background: rgba(0,0,0,0.2);">
+                    <button class="console-tab active" data-target="serialConsole">Serial Monitor</button>
+                    <button class="console-tab" data-target="flashConsole">Flashing Logs</button>
+                </div>
+
+                <div style="padding: 12px; display: flex; flex-direction: column; flex-grow: 1;">
+                    <!-- Serial Console -->
+                    <div id="serialConsole" class="terminal-window active">
+                        <div class="log-line">Welcome to ESP32 Web Flasher v1.0</div>
+                        <div class="log-line">> Ready for connection...</div>
+                    </div>
+
+                    <!-- Flash Console -->
+                    <div id="flashConsole" class="terminal-window">
+                        <div class="log-line">Flashing logs will appear here...</div>
+                    </div>
                 </div>
 
                 <!-- Progress Container -->
@@ -174,7 +217,7 @@
         </div>
     </main>
 
-    <script type="module" src="app.js?v=6"></script>
+    <script type="module" src="app.js?v=9"></script>
 </body>
 
 </html>
