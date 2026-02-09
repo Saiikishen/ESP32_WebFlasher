@@ -346,14 +346,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (input) {
             input.addEventListener('change', (e) => {
                 const file = e.target.files[0];
-                const container = input.closest('.file-selector, .file-row');
-                const fileNameSpan = container.querySelector('.file-name');
+                const container = input.closest('.file-input-wrapper');
+                const label = container ? container.querySelector('.file-label') : null;
 
                 if (file) {
-                    if (fileNameSpan) {
-                        fileNameSpan.textContent = file.name;
+                    if (label) {
+                        label.textContent = file.name;
+                        label.style.color = 'var(--text-main)';
+                        label.title = file.name; // Add tooltop for long names
                     }
                     log(`Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, 'success');
+                } else {
+                    if (label) {
+                        label.textContent = "Choose file...";
+                        label.style.color = 'var(--text-muted)';
+                    }
                 }
             });
         }
