@@ -260,6 +260,84 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ============= File Drop Zone Handlers =============
+    const fileDropZone = document.querySelector('.file-drop-zone');
+
+    if (fileDropZone) {
+        // Click to browse
+        fileDropZone.addEventListener('click', () => {
+            const isSingleMode = document.getElementById('singleFileContainer').style.display !== 'none';
+            if (isSingleMode) {
+                document.getElementById('singleFile').click();
+            } else {
+                // In multi mode, trigger the first file (bootloader)
+                document.getElementById('bootloaderFile').click();
+            }
+        });
+
+        // Drag and drop
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileDropZone.style.borderColor = 'var(--primary)';
+            fileDropZone.style.backgroundColor = 'rgba(0, 242, 255, 0.05)';
+        });
+
+        fileDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileDropZone.style.borderColor = 'var(--glass-border)';
+            fileDropZone.style.backgroundColor = 'transparent';
+        });
+
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileDropZone.style.borderColor = 'var(--glass-border)';
+            fileDropZone.style.backgroundColor = 'transparent';
+
+            const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.bin'));
+
+            if (files.length === 0) {
+                logSerial('Please drop .bin files only', 'warning');
+                return;
+            }
+
+            const isSingleMode = document.getElementById('singleFileContainer').style.display !== 'none';
+
+            if (isSingleMode) {
+                // Single mode: use first file
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(files[0]);
+                document.getElementById('singleFile').files = dataTransfer.files;
+                document.getElementById('singleFile').dispatchEvent(new Event('change', { bubbles: true }));
+                logSerial(`Loaded: ${files[0].name}`, 'success');
+            } else {
+                // Multi mode: assign to bootloader, partitions, app
+                const fileMap = {
+                    0: 'bootloaderFile',
+                    1: 'partitionsFile',
+                    2: 'appFile'
+                };
+
+                files.slice(0, 3).forEach((file, idx) => {
+                    const inputId = fileMap[idx];
+                    if (inputId) {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        document.getElementById(inputId).files = dataTransfer.files;
+                        document.getElementById(inputId).dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+
+                logSerial(`Loaded ${files.slice(0, 3).length} file(s)`, 'success');
+            }
+        });
+
+        // Add cursor pointer style
+        fileDropZone.style.cursor = 'pointer';
+    }
+
     // ============= File input handling =============
     const fileInputs = ['singleFile', 'bootloaderFile', 'partitionsFile', 'appFile'];
 
@@ -383,12 +461,44 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(error);
             updateProgress(false);
 
-            // Try to recover monitor
+            // Robust recovery: clean up transport and port state
+            logFlash('Attempting to recover serial connection...', 'warning');
+
+            // Step 1: Disconnect transport if it exists
+            if (transport) {
+                try {
+                    await transport.disconnect();
+                    logFlash('Transport disconnected', 'info');
+                } catch (e) {
+                    console.log('Transport disconnect:', e.message);
+                }
+                transport = null;
+            }
+
+            // Step 2: Close port if still open
+            if (port) {
+                try {
+                    await port.close();
+                    logFlash('Port closed', 'info');
+                } catch (e) {
+                    console.log('Port close:', e.message);
+                }
+            }
+
+            // Step 3: Wait for port to fully release
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 4: Reopen port and restart monitor
             try {
                 await port.open({ baudRate: 115200 });
                 startReading();
+                logFlash('Serial monitor recovered!', 'success');
                 switchTab('serialConsole');
-            } catch (e) { }
+                logSerial('Serial monitor active. Ready for retry.', 'success');
+            } catch (reopenError) {
+                logFlash(`Recovery failed: ${reopenError.message}`, 'error');
+                logFlash('Please disconnect and reconnect the device.', 'warning');
+            }
         }
     });
 
@@ -559,12 +669,44 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(error);
             updateProgress(false);
 
-            // Try to recover monitor
+            // Robust recovery: clean up transport and port state
+            logFlash('Attempting to recover serial connection...', 'warning');
+
+            // Step 1: Disconnect transport if it exists
+            if (transport) {
+                try {
+                    await transport.disconnect();
+                    logFlash('Transport disconnected', 'info');
+                } catch (e) {
+                    console.log('Transport disconnect:', e.message);
+                }
+                transport = null;
+            }
+
+            // Step 2: Close port if still open
+            if (port) {
+                try {
+                    await port.close();
+                    logFlash('Port closed', 'info');
+                } catch (e) {
+                    console.log('Port close:', e.message);
+                }
+            }
+
+            // Step 3: Wait for port to fully release
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Step 4: Reopen port and restart monitor
             try {
                 await port.open({ baudRate: 115200 });
                 startReading();
+                logFlash('Serial monitor recovered!', 'success');
                 switchTab('serialConsole');
-            } catch (e) { }
+                logSerial('Serial monitor active. Ready for retry.', 'success');
+            } catch (reopenError) {
+                logFlash(`Recovery failed: ${reopenError.message}`, 'error');
+                logFlash('Please disconnect and reconnect the device.', 'warning');
+            }
         }
     });
 

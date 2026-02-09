@@ -1,0 +1,23 @@
+{
+    "name": "esp32-web-flasher",
+    "version": "1.0.0",
+    "description": "Premium ESP32 Web Flasher using Web Serial API",
+    "main": "index.html",
+    "scripts": {
+        "start": "serve .",
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "keywords": [
+        "esp32",
+        "flasher",
+        "webserial",
+        "esptool"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "vite": "^5.0.0"
+    }
+}
