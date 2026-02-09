@@ -740,4 +740,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') sendBtn.click();
         });
     }
+
+    // ============= Clear Console Button =============
+    const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+    if (clearConsoleBtn) {
+        clearConsoleBtn.addEventListener('click', () => {
+            // Find the active terminal
+            const activeTerminal = document.querySelector('.terminal-window.active');
+            if (activeTerminal) {
+                // Clear all log lines
+                activeTerminal.innerHTML = '';
+
+                // Add a cleared message
+                const clearedMsg = document.createElement('div');
+                clearedMsg.className = 'log-line';
+                clearedMsg.textContent = '> Console cleared';
+                clearedMsg.style.color = 'var(--text-muted)';
+                activeTerminal.appendChild(clearedMsg);
+            }
+        });
+    }
 });

@@ -174,9 +174,16 @@
             <section class="console-panel glass-panel"
                 style="padding: 0; display: flex; flex-direction: column; overflow: hidden;">
                 <!-- Tabs -->
-                <div class="console-tabs" style="padding: 12px 12px 0 12px; background: rgba(0,0,0,0.2);">
-                    <button class="console-tab active" data-target="serialConsole">Serial Monitor</button>
-                    <button class="console-tab" data-target="flashConsole">Flashing Logs</button>
+                <div class="console-tabs"
+                    style="padding: 12px 12px 0 12px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; gap: 2px;">
+                        <button class="console-tab active" data-target="serialConsole">Serial Monitor</button>
+                        <button class="console-tab" data-target="flashConsole">Flashing Logs</button>
+                    </div>
+                    <button id="clearConsoleBtn" class="btn"
+                        style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted);">
+                        Clear
+                    </button>
                 </div>
 
                 <div style="padding: 12px; display: flex; flex-direction: column; flex-grow: 1;">
@@ -217,7 +224,7 @@
         </div>
     </main>
 
-    <script type="module" src="app.js?v=10"></script>
+    <script type="module" src="app.js?v=13"></script>
 </body>
 
 </html>
