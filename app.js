@@ -417,12 +417,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const chip = await esploader.main();
             log(`Chip detected: ${chip}`, 'success');
 
-            try {
-                log('Uploading stub loader for fast flashing...', 'info');
-                await esploader.runStub();
-                log('Stub loader running!', 'success');
-            } catch (e) {
-                log('Stub loader failed, using ROM bootloader (slower)', 'warning');
+            // Check if stub is already running before trying to load it
+            if (esploader.IS_STUB) {
+                log('Stub loader already running (from previous session)', 'success');
+            } else {
+                // Add delay to ensure chip is fully ready
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                try {
+                    log('Uploading stub loader for fast flashing...', 'info');
+                    await esploader.runStub();
+                    log('Stub loader running!', 'success');
+                } catch (e) {
+                    log(`Stub loader failed: ${e.message}`, 'warning');
+                    log('Using ROM bootloader (slower)', 'warning');
+                }
             }
 
             // Flash each file
