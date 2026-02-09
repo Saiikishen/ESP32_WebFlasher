@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Web Flasher</title>
+    <link rel="stylesheet" href="index.css">
+    <!-- Search engine optimization -->
+    <meta name="description"
+        content="A premium web-based tool to flash ESP32 firmware directly from your browser using Web Serial API.">
+</head>
+
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                    </svg>
+                </div>
+                <span class="text-gradient">ESP32<span
+                        style="font-weight: 300; margin-left:8px; opacity:0.8;">FLASHER</span></span>
+            </div>
+
+            <div class="status-pill" id="connectionStatus">
+                <div class="status-dot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero-section glass-panel" style="padding: 40px; margin-bottom: 30px; text-align: center;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 16px;">Flash your <span
+                    class="text-primary-gradient">ESP32</span> in seconds</h1>
+            <p
+                style="color: var(--text-muted); margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Connect your device via USB and flash firmware directly from the browser. No installation required.
+            </p>
+            <button id="connectBtn" class="btn btn-primary">Connect Device</button>
+        </section>
+
+        <!-- Main Workspace (Hidden until connected or for demo) -->
+        <div id="workspace" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Files Column -->
+            <section class="files-panel glass-panel" style="padding: 24px;">
+                <h3 style="margin-bottom: 20px;">Firmware Files</h3>
+
+                <div class="file-drop-zone"
+                    style="border: 2px dashed var(--glass-border); border-radius: var(--radius-md); padding: 30px; text-align: center; color: var(--text-muted); transition: all 0.2s;">
+                    <p>Drop your .bin files here or click to browse</p>
+                </div>
+
+                <!-- Placeholder for file list -->
+                <!-- Flash Mode Toggle -->
+                <div class="flash-mode-toggle"
+                    style="background: rgba(255,255,255,0.05); padding: 4px; border-radius: var(--radius-sm); display: inline-flex; margin-bottom: 20px; border: 1px solid var(--glass-border);">
+                    <button id="modeSingle" class="mode-btn active"
+                        style="padding: 6px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; background: var(--primary); color: #000; font-weight: 500; font-size: 0.9rem; transition: all 0.2s;">Single
+                        File</button>
+                    <button id="modeMulti" class="mode-btn"
+                        style="padding: 6px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; background: transparent; color: var(--text-muted); font-weight: 500; font-size: 0.9rem; transition: all 0.2s;">Multi
+                        File</button>
+                </div>
+
+                <!-- Single File Mode -->
+                <div id="singleFileContainer" class="file-list"
+                    style="display: flex; flex-direction: column; gap: 16px;">
+                    <div class="file-row glass-panel"
+                        style="padding: 16px; display: grid; grid-template-columns: 120px 1fr 100px; gap: 12px; align-items: center;">
+                        <span style="font-weight: 500; font-size: 0.9rem;">Firmware</span>
+                        <div class="file-input-wrapper" style="position: relative;">
+                            <input type="file" id="singleFile" accept=".bin" style="display: none;">
+                            <label for="singleFile" class="file-label"
+                                style="display: block; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Choose
+                                file...</label>
+                        </div>
+                        <input type="text" value="0x0000" class="address-input"
+                            style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: var(--text-mono); padding: 8px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono'; font-size: 0.85rem; width: 100%;">
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -8px; margin-left: 4px;">For
+                        merged binaries (Arduino, PlatformIO) or simple app updates.</p>
+                </div>
+
+                <!-- Multi File Mode (Hidden by default) -->
+                <div id="multiFileContainer" class="file-list"
+                    style="display: none; flex-direction: column; gap: 16px;">
+                    <!-- Bootloader Row -->
+                    <div class="file-row glass-panel"
+                        style="padding: 16px; display: grid; grid-template-columns: 120px 1fr 100px; gap: 12px; align-items: center;">
+                        <span style="font-weight: 500; font-size: 0.9rem;">Bootloader</span>
+                        <div class="file-input-wrapper" style="position: relative;">
+                            <input type="file" id="bootloaderFile" accept=".bin" style="display: none;">
+                            <label for="bootloaderFile" class="file-label"
+                                style="display: block; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Choose
+                                file...</label>
+                        </div>
+                        <input type="text" value="0x1000" class="address-input"
+                            style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: var(--text-mono); padding: 8px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono'; font-size: 0.85rem; width: 100%;">
+                    </div>
+
+                    <!-- Partitions Row -->
+                    <div class="file-row glass-panel"
+                        style="padding: 16px; display: grid; grid-template-columns: 120px 1fr 100px; gap: 12px; align-items: center;">
+                        <span style="font-weight: 500; font-size: 0.9rem;">Partitions</span>
+                        <div class="file-input-wrapper" style="position: relative;">
+                            <input type="file" id="partitionsFile" accept=".bin" style="display: none;">
+                            <label for="partitionsFile" class="file-label"
+                                style="display: block; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Choose
+                                file...</label>
+                        </div>
+                        <input type="text" value="0x8000" class="address-input"
+                            style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: var(--text-mono); padding: 8px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono'; font-size: 0.85rem; width: 100%;">
+                    </div>
+
+                    <!-- Firmware Row -->
+                    <div class="file-row glass-panel"
+                        style="padding: 16px; display: grid; grid-template-columns: 120px 1fr 100px; gap: 12px; align-items: center;">
+                        <span style="font-weight: 500; font-size: 0.9rem;">App Firmware</span>
+                        <div class="file-input-wrapper" style="position: relative;">
+                            <input type="file" id="appFile" accept=".bin" style="display: none;">
+                            <label for="appFile" class="file-label"
+                                style="display: block; padding: 8px 12px; background: rgba(255,255,255,0.05); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Choose
+                                file...</label>
+                        </div>
+                        <input type="text" value="0x10000" class="address-input"
+                            style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: var(--text-mono); padding: 8px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono'; font-size: 0.85rem; width: 100%;">
+                    </div>
+                </div>
+
+                <div class="actions" style="margin-top: 24px; display: flex; gap: 12px;">
+                    <button id="eraseBtn" class="btn"
+                        style="background: rgba(255, 50, 50, 0.1); color: #ff5555; border: 1px solid rgba(255, 50, 50, 0.2); flex: 1;">Erase
+                        Flash</button>
+                    <button id="programBtn" class="btn"
+                        style="background: var(--primary); color: #000; flex: 2; box-shadow: 0 0 20px var(--primary-dim);">Program</button>
+                </div>
+            </section>
+
+            <!-- Console Column -->
+            <section class="console-panel glass-panel" style="padding: 24px; display: flex; flex-direction: column;">
+                <h3 style="margin-bottom: 20px;">Serial Monitor</h3>
+                <div class="terminal-window">
+                    <div class="log-line">Welcome to ESP32 Web Flasher v1.0</div>
+                    <div class="log-line">> Ready for connection...</div>
+                </div>
+
+                <!-- Progress Container -->
+                <div id="progressContainer" style="margin-top: 16px; display: none;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+                        <span id="progressLabel" style="color: var(--text-muted);">Flashing...</span>
+                        <span id="progressPercent" style="color: var(--primary);">0%</span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div id="progressBar"
+                            style="height: 100%; width: 0%; background: var(--primary); box-shadow: 0 0 10px var(--primary); transition: width 0.2s;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Serial Input -->
+                <div class="serial-input-container" style="margin-top: 16px; display: flex; gap: 8px;">
+                    <input type="text" id="serialInput" placeholder="Type command..."
+                        style="flex-grow: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 14px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none;"
+                        onfocus="this.style.borderColor='var(--primary)'"
+                        onblur="this.style.borderColor='var(--glass-border)'">
+                    <button id="sendBtn" class="btn btn-primary" style="padding: 10px 20px;">Send</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module" src="app.js?v=4"></script>
+</body>
+
+</html>
