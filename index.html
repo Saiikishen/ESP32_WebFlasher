@@ -228,7 +228,14 @@
         </div>
     </main>
 
-    <script type="module" src="app.js?v=14"></script>
+    <!-- Web Serial Polyfill (optional, for older browsers) -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/web-serial-polyfill@1.0.15/dist/serial.min.js"></script> -->
+
+    <!-- ESPTool.js with local fallback -->
+    <script src="https://unpkg.com/esptool-js@0.5.6/bundle.js"
+        onerror="this.onerror=null; this.src='/vendor/bundle.js'"></script>
+
+    <script type="module" src="/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

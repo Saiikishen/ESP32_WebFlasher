@@ -2,10 +2,10 @@ const CACHE_NAME = 'esp32-flasher-v1';
 
 // Assets that MUST be cached immediately for the app to work offline
 const CORE_ASSETS = [
-    './',
-    './index.html',
-    './manifest.json',
-    './icon.svg'
+    '/',
+    '/index.html',
+    '/manifest.json',
+    '/icon.svg'
 ];
 
 // External assets to cache at runtime (Fonts, Libraries)
@@ -40,20 +40,19 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - Stale-While-Revalidate / Dynamic Cache
+// Fetch event
 self.addEventListener('fetch', (event) => {
     const requestUrl = new URL(event.request.url);
 
-    // Strategy 1: External Assets (Fonts, CDM) -> Cache First, Network Fallback
-    // This prevents the "ERR_INTERNET_DISCONNECTED" errors for fonts/libs killing the page
+    // Strategy 1: External Assets (Fonts, CDN) -> Cache First, Network Fallback
     if (EXTERNAL_ORIGINS.some(origin => requestUrl.origin.startsWith(origin))) {
         event.respondWith(
             caches.match(event.request).then((cachedResponse) => {
                 if (cachedResponse) return cachedResponse;
 
                 return fetch(event.request).then((networkResponse) => {
-                    // Check if valid response
-                    if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'cors') {
+                    // Check if valid response (allow opaque responses with status 0 for externals)
+                    if (!networkResponse || (networkResponse.status !== 200 && networkResponse.status !== 0)) {
                         return networkResponse;
                     }
 
@@ -65,8 +64,7 @@ self.addEventListener('fetch', (event) => {
 
                     return networkResponse;
                 }).catch(() => {
-                    // If offline and not in cache, returning nothing (or a fallback) is better than throwing error
-                    // For fonts/scripts, we can just return undefined to let the browser handle the failure gracefully
+                    // Fallback or just return undefined to let browser handle failure
                     return new Response('', { status: 408, statusText: 'Request timed out' });
                 });
             })
@@ -106,11 +104,9 @@ self.addEventListener('fetch', (event) => {
                     return networkResponse;
                 }).catch((error) => {
                     console.error('Fetch failed:', event.request.url, error);
-                    // Return offline fallback if navigating to a page
                     if (event.request.mode === 'navigate') {
-                        return caches.match('./index.html');
+                        return caches.match('/index.html');
                     }
-                    // Fallback for missing images/files
                     return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
                 });
             })
