@@ -199,10 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Prompt user to select a port
             port = await navigator.serial.requestPort();
 
-            // Open the port for Serial Monitor
-            await port.open({ baudRate: 115200 });
+            // Get selected baud rate
+            const baudRateSelect = document.getElementById('baudRateSelect');
+            const baudRate = parseInt(baudRateSelect.value) || 115200;
 
-            log('Serial port connected @ 115200', 'success');
+            // Open the port for Serial Monitor
+            await port.open({ baudRate: baudRate });
+
+            log(`Serial port connected @ ${baudRate}`, 'success');
 
             // Update UI
             connectBtn.textContent = 'Disconnect';

@@ -185,10 +185,20 @@
                         <button class="console-tab active" data-target="serialConsole">Serial Monitor</button>
                         <button class="console-tab" data-target="flashConsole">Flashing Logs</button>
                     </div>
-                    <button id="clearConsoleBtn" class="btn"
-                        style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted);">
-                        Clear
-                    </button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="baudRateSelect" class="console-select"
+                            style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: var(--radius-sm); outline: none;">
+                            <option value="115200" selected>115200</option>
+                            <option value="921600">921600</option>
+                            <option value="460800">460800</option>
+                            <option value="230400">230400</option>
+                            <option value="9600">9600</option>
+                        </select>
+                        <button id="clearConsoleBtn" class="btn"
+                            style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted);">
+                            Clear
+                        </button>
+                    </div>
                 </div>
 
                 <div style="padding: 12px; display: flex; flex-direction: column; flex-grow: 1;">
