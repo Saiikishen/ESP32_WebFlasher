@@ -7,8 +7,11 @@
     <title>ESP32 Web Flasher</title>
     <link rel="stylesheet" href="index.css">
     <!-- Search engine optimization -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00f2ff">
+    <!-- Search engine optimization -->
     <meta name="description"
-        content="A premium web-based tool to flash ESP32 firmware directly from your browser using Web Serial API.">
+        content="A premium web-based tool to flash ESP32 firmware directly from the browser using Web Serial API.">
 </head>
 
 <body>
@@ -40,6 +43,7 @@
             <p
                 style="color: var(--text-muted); margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto;">
                 Connect your device via USB and flash firmware directly from the browser. No installation required.
+                <br><span style="font-size: 0.8em; opacity: 0.7;">(Install this app for offline use)</span>
             </p>
             <button id="connectBtn" class="btn btn-primary">Connect Device</button>
         </section>
@@ -225,6 +229,15 @@
     </main>
 
     <script type="module" src="app.js?v=14"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then((reg) => console.log('SW registered:', reg))
+                    .catch((err) => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
 </body>
 
 </html>
