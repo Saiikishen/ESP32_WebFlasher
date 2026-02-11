@@ -1,7 +1,7 @@
 {
     "name": "ESP32 Web Flasher",
     "short_name": "ESP Flasher",
-    "start_url": "./index.html",
+    "start_url": ".",
     "display": "standalone",
     "background_color": "#0f172a",
     "theme_color": "#00f2ff",

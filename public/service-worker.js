@@ -4,8 +4,8 @@ const CACHE_NAME = 'esp32-flasher-v1';
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            // We only cache the manifest and icon initially.
-            // Other assets will be cached at runtime to support versioned builds.
+            // ONLY cache potentially static usage assets.
+            // DYNAMIC ASSETS (app.js, index.css) are hashed by Vite build and must be cached at runtime.
             return cache.addAll([
                 './',
                 './index.html',
