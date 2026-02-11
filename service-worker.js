@@ -5,7 +5,7 @@ const CORE_ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/icon.svg'
+    '/icon.png'
 ];
 
 // External assets to cache at runtime (Fonts, Libraries)
